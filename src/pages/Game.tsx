@@ -4,6 +4,7 @@ import { createInitialGameState, type GameState } from "../game/gamestate";
 import type { Card, TableSuit } from "../game/types";
 import type { Player } from "../game/player";
 import { createDeck, shuffleDeck, dealCards } from "../game/deck";
+import { canPlayCard, hasPlayableCard, getPlayableCards } from "../game/rules";
 
 export default function Game() {
   const location = useLocation();
@@ -31,7 +32,7 @@ export default function Game() {
 
   // --- Tarkista voittaja ---
   const checkWin = (players: Player[]) => {
-    const winner = players.find(p => p.hand.length === 0);
+    const winner = players.find((p) => p.hand.length === 0);
     if (winner) {
       alert(`${winner.name} voitti pelin! 🎉`);
       return true;
@@ -39,37 +40,58 @@ export default function Game() {
     return false;
   };
 
-  // --- Päivitä logi ---
   const addToLog = (entry: string) => {
-    setGameLog(prev => [entry, ...prev.slice(0, 4)]); // viimeiset 5
+    setGameLog((prev) => [entry, ...prev.slice(0, 4)]);
   };
 
-  // --- Kortin pelaaminen ihmispelaajan toimesta ---
+  const playInitialCrossSevenIfNeeded = () => {
+    setGameState((prev) => {
+      // jos pöydässä on jo kortteja → skip
+      if (prev.table.length > 0) return prev;
+
+      const crossSevenPlayerIndex = prev.players.findIndex((p) =>
+        p.hand.some((c) => c.suit === "clubs" && c.rank === 7)
+      );
+
+      if (crossSevenPlayerIndex === -1) return prev;
+
+      const player = prev.players[crossSevenPlayerIndex];
+      const crossSeven = player.hand.find(
+        (c) => c.suit === "clubs" && c.rank === 7
+      )!;
+
+      addToLog(`${player.name} Had 7 of clubs`);
+
+      const newPlayers = [...prev.players];
+      newPlayers[crossSevenPlayerIndex] = {
+        ...player,
+        hand: player.hand.filter((c) => c !== crossSeven),
+      };
+
+      const newTable: TableSuit[] = [{ suit: "clubs", cards: [crossSeven] }];
+
+      return {
+        ...prev,
+        table: newTable,
+        players: newPlayers,
+        currentPlayerIndex: (crossSevenPlayerIndex + 1) % prev.players.length,
+      };
+    });
+  };
+
+  // =========================
+  // 🧍 IHMISPELAAJA
+  // =========================
+
   const playCard = (card: Card) => {
     if (currentPlayer.type !== "human") return;
+    if (!canPlayCard(card, gameState.table)) return;
 
-    const suitPile = gameState.table.find(t => t.suit === card.suit);
-    let canPlay = false;
-
-    if (!suitPile) {
-      if (card.rank === 7) canPlay = true;
-    } else {
-      const minRank = Math.min(...suitPile.cards.map(c => c.rank));
-      const maxRank = Math.max(...suitPile.cards.map(c => c.rank));
-      if (card.rank === minRank - 1 || card.rank === maxRank + 1) canPlay = true;
-    }
-
-    if (!canPlay) {
-      alert("Korttia ei voi pelata sääntöjen mukaan!");
-      return;
-    }
-
-    // --- Lisää logiin ---
     addToLog(`${currentPlayer.name} played ${card.rank} of ${card.suit}`);
 
-    setGameState(prev => {
+    setGameState((prev) => {
       const newTable = [...prev.table];
-      let newPile = newTable.find(t => t.suit === card.suit);
+      let newPile = newTable.find((t) => t.suit === card.suit);
       if (!newPile) {
         newPile = { suit: card.suit, cards: [] };
         newTable.push(newPile);
@@ -79,12 +101,11 @@ export default function Game() {
       const newPlayers = [...prev.players];
       newPlayers[prev.currentPlayerIndex] = {
         ...currentPlayer,
-        hand: currentPlayer.hand.filter(c => c !== card),
+        hand: currentPlayer.hand.filter((c) => c !== card),
       };
 
       const nextIndex = (prev.currentPlayerIndex + 1) % newPlayers.length;
 
-      // Tarkista voittaja
       if (checkWin(newPlayers)) return prev;
 
       return {
@@ -96,56 +117,52 @@ export default function Game() {
     });
   };
 
-  // --- AI:n siirtofunktio ---
-  const playAICard = (aiIndex: number, players: Player[], table: TableSuit[]) => {
-    const ai = players[aiIndex];
-    let cardToPlay: Card | null = null;
+  useEffect(() => {
+    playInitialCrossSevenIfNeeded();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    for (const c of ai.hand) {
-      const suitPile = table.find(t => t.suit === c.suit);
-      if (!suitPile && c.rank === 7) {
-        cardToPlay = c;
-        break;
-      } else if (suitPile) {
-        const minRank = Math.min(...suitPile.cards.map(cc => cc.rank));
-        const maxRank = Math.max(...suitPile.cards.map(cc => cc.rank));
-        if (c.rank === minRank - 1 || c.rank === maxRank + 1) {
-          cardToPlay = c;
-          break;
-        }
-      }
-    }
+  // =========================
+  // 🤖 AI
+  // =========================
+
+  const playAICard = (
+    aiIndex: number,
+    players: Player[],
+    table: TableSuit[]
+  ) => {
+    const ai = players[aiIndex];
+    const playableCards = getPlayableCards(ai, table);
+    const cardToPlay = playableCards[0] ?? null;
 
     if (!cardToPlay) {
-      // Passaa AI
       addToLog(`${ai.name} passed`);
-      setGameState(prev => {
-        const nextIndex = (prev.currentPlayerIndex + 1) % prev.players.length;
-        return { ...prev, currentPlayerIndex: nextIndex };
-      });
+      setGameState((prev) => ({
+        ...prev,
+        currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
+      }));
       return;
     }
 
     addToLog(`${ai.name} played ${cardToPlay.rank} of ${cardToPlay.suit}`);
 
-    setGameState(prev => {
+    setGameState((prev) => {
       const newTable = [...table];
-      let newPile = newTable.find(t => t.suit === cardToPlay!.suit);
+      let newPile = newTable.find((t) => t.suit === cardToPlay.suit);
       if (!newPile) {
-        newPile = { suit: cardToPlay!.suit, cards: [] };
+        newPile = { suit: cardToPlay.suit, cards: [] };
         newTable.push(newPile);
       }
-      newPile.cards.push(cardToPlay!);
+      newPile.cards.push(cardToPlay);
 
       const newPlayers = [...players];
       newPlayers[aiIndex] = {
         ...ai,
-        hand: ai.hand.filter(c => c !== cardToPlay),
+        hand: ai.hand.filter((c) => c !== cardToPlay),
       };
 
       const nextIndex = (aiIndex + 1) % newPlayers.length;
 
-      // Tarkista voittaja
       if (checkWin(newPlayers)) return prev;
 
       return {
@@ -162,26 +179,40 @@ export default function Game() {
     const current = gameState.players[gameState.currentPlayerIndex];
     if (current.type === "ai") {
       const timer = setTimeout(() => {
-        playAICard(gameState.currentPlayerIndex, gameState.players, gameState.table);
+        playAICard(
+          gameState.currentPlayerIndex,
+          gameState.players,
+          gameState.table
+        );
       }, 500);
       return () => clearTimeout(timer);
     }
   }, [gameState.currentPlayerIndex, gameState.players, gameState.table]);
 
-  // --- Passausnappi ---
+  // =========================
+  // 🚫 PASSAUS
+  // =========================
+
+  const canPass = !hasPlayableCard(currentPlayer, gameState.table);
+
   const passTurn = () => {
+    if (!canPass) {
+      alert("Et voi passata – sinulla on pelattava kortti!");
+      return;
+    }
+
     addToLog(`${currentPlayer.name} passed`);
-    setGameState(prev => {
-      const nextIndex = (prev.currentPlayerIndex + 1) % prev.players.length;
-      return { ...prev, currentPlayerIndex: nextIndex };
-    });
+    setGameState((prev) => ({
+      ...prev,
+      currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
+    }));
   };
 
   // --- Funktio pöydän kolmen kasan renderöintiin ---
   const getSuitDisplay = (cards: Card[]) => {
-    const left = cards.filter(c => c.rank < 7);
-    const seven = cards.find(c => c.rank === 7);
-    const right = cards.filter(c => c.rank > 7);
+    const left = cards.filter((c) => c.rank < 7);
+    const seven = cards.find((c) => c.rank === 7);
+    const right = cards.filter((c) => c.rank > 7);
 
     return {
       left: left.length ? left[left.length - 1] : null,
@@ -190,30 +221,30 @@ export default function Game() {
     };
   };
 
+  // =========================
+  // 🖼️ UI
+  // =========================
+
   return (
     <div>
       <h2>Ristiseiska</h2>
       <p>Game code: {gameState.gameCode}</p>
-      <p>Current player: {currentPlayer.name} ({currentPlayer.type})</p>
+      <p>
+        Current player: {currentPlayer.name} ({currentPlayer.type})
+      </p>
 
       <h3>Table</h3>
       {gameState.table.length === 0 ? (
         <p>Pöytä tyhjä</p>
       ) : (
-        gameState.table.map(t => {
+        gameState.table.map((t) => {
           const { left, center, right } = getSuitDisplay(t.cards);
           return (
-            <div key={t.suit} style={{ marginBottom: "10px" }}>
+            <div key={t.suit} style={{ marginBottom: 10 }}>
               <strong>{t.suit.toUpperCase()}:</strong>{" "}
-              <span style={{ display: "inline-block", width: 30, height: 45, lineHeight: "45px", textAlign: "center", border: "1px solid black", borderRadius: 4, marginRight: 3, backgroundColor: "#fdd" }}>
-                {left?.rank || "-"}
-              </span>
-              <span style={{ display: "inline-block", width: 30, height: 45, lineHeight: "45px", textAlign: "center", border: "1px solid black", borderRadius: 4, marginRight: 3, backgroundColor: "#fff" }}>
-                {center?.rank || "-"}
-              </span>
-              <span style={{ display: "inline-block", width: 30, height: 45, lineHeight: "45px", textAlign: "center", border: "1px solid black", borderRadius: 4, marginRight: 3, backgroundColor: "#dfd" }}>
-                {right?.rank || "-"}
-              </span>
+              <span>{left?.rank || "-"}</span>{" "}
+              <span>{center?.rank || "-"}</span>{" "}
+              <span>{right?.rank || "-"}</span>
             </div>
           );
         })
@@ -222,13 +253,33 @@ export default function Game() {
       {currentPlayer.type === "human" && (
         <>
           <h3>Your hand</h3>
-          {currentPlayer.hand.map((c, idx) => (
-            <button key={idx} onClick={() => playCard(c)}>
-              {c.rank} {c.suit[0].toUpperCase()}
+          {currentPlayer.hand.map((c, idx) => {
+            const playable = canPlayCard(c, gameState.table);
+
+            return (
+              <button
+                key={idx}
+                disabled={!playable}
+                onClick={() => playable && playCard(c)}
+                style={{
+                  margin: 4,
+                  padding: "6px 10px",
+                  borderRadius: 6,
+                  backgroundColor: playable ? "#c8f7c5" : "#eee",
+                  border: playable ? "2px solid green" : "1px solid #aaa",
+                  cursor: playable ? "pointer" : "not-allowed",
+                  opacity: playable ? 1 : 0.6,
+                }}
+              >
+                {c.rank} {c.suit[0].toUpperCase()}
+              </button>
+            );
+          })}
+
+          <div style={{ marginTop: 10 }}>
+            <button onClick={passTurn} disabled={!canPass}>
+              Pass
             </button>
-          ))}
-          <div style={{ marginTop: "10px" }}>
-            <button onClick={passTurn}>Pass</button>
           </div>
         </>
       )}
@@ -238,7 +289,7 @@ export default function Game() {
         {gameState.players.map((p, i) => (
           <li key={p.id}>
             {i === gameState.currentPlayerIndex ? "👉 " : ""}
-            {p.name} ({p.type}) - {p.hand.length} cards
+            {p.name} ({p.type}) – {p.hand.length} cards
           </li>
         ))}
       </ul>
