@@ -79,9 +79,7 @@ export default function Game() {
     });
   };
 
-  // =========================
-  // 🧍 IHMISPELAAJA
-  // =========================
+  // IHMISPELAAJA
 
   const playCard = (card: Card) => {
     if (currentPlayer.type !== "human") return;
@@ -122,9 +120,7 @@ export default function Game() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // =========================
-  // 🤖 AI
-  // =========================
+  // AI
 
   const playAICard = (
     aiIndex: number,
@@ -189,9 +185,9 @@ export default function Game() {
     }
   }, [gameState.currentPlayerIndex, gameState.players, gameState.table]);
 
-  // =========================
-  // 🚫 PASSAUS
-  // =========================
+
+  // PASSAUS
+
 
   const canPass = !hasPlayableCard(currentPlayer, gameState.table);
 
@@ -221,9 +217,7 @@ export default function Game() {
     };
   };
 
-  // =========================
-  // 🖼️ UI
-  // =========================
+  // UI
 
   return (
     <div>
