@@ -15,7 +15,7 @@ export default function Game() {
     aiPlayers: number;
   };
 
-  // --- Game state ---
+  // Game state
   const [gameState, setGameState] = React.useState<GameState>(() => {
     const state = createInitialGameState(gameCode, humanPlayers, aiPlayers);
     const deck = shuffleDeck(createDeck());
@@ -30,7 +30,7 @@ export default function Game() {
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
 
-  // --- Tarkista voittaja ---
+  // Check winner
   const checkWin = (players: Player[]) => {
     const winner = players.find((p) => p.hand.length === 0);
     if (winner) {
@@ -79,7 +79,7 @@ export default function Game() {
     });
   };
 
-  // IHMISPELAAJA
+  // Human player
 
   const playCard = (card: Card) => {
     if (currentPlayer.type !== "human") return;
@@ -170,7 +170,7 @@ export default function Game() {
     });
   };
 
-  // --- Reaktiivinen AI-käsittely ---
+  // Reactive AI handling
   useEffect(() => {
     const current = gameState.players[gameState.currentPlayerIndex];
     if (current.type === "ai") {
@@ -186,9 +186,7 @@ export default function Game() {
   }, [gameState.currentPlayerIndex, gameState.players, gameState.table]);
 
 
-  // PASSAUS
-
-
+  // Passing turn
   const canPass = !hasPlayableCard(currentPlayer, gameState.table);
 
   const passTurn = () => {
@@ -204,7 +202,7 @@ export default function Game() {
     }));
   };
 
-  // --- Funktio pöydän kolmen kasan renderöintiin ---
+  // Render three piles per suit
   const getSuitDisplay = (cards: Card[]) => {
     const left = cards.filter((c) => c.rank < 7);
     const seven = cards.find((c) => c.rank === 7);
