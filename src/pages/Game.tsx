@@ -5,6 +5,7 @@ import type { Card, TableSuit } from "../game/types";
 import type { Player } from "../game/player";
 import { createDeck, shuffleDeck, dealCards } from "../game/deck";
 import { canPlayCard, hasPlayableCard, getPlayableCards } from "../game/rules";
+import PlayingCard from "../components/PlayingCard";
 
 export default function Game() {
   const location = useLocation();
@@ -50,14 +51,14 @@ export default function Game() {
       if (prev.table.length > 0) return prev;
 
       const crossSevenPlayerIndex = prev.players.findIndex((p) =>
-        p.hand.some((c) => c.suit === "clubs" && c.rank === 7)
+        p.hand.some((c) => c.suit === "clubs" && c.rank === 7),
       );
 
       if (crossSevenPlayerIndex === -1) return prev;
 
       const player = prev.players[crossSevenPlayerIndex];
       const crossSeven = player.hand.find(
-        (c) => c.suit === "clubs" && c.rank === 7
+        (c) => c.suit === "clubs" && c.rank === 7,
       )!;
 
       addToLog(`${player.name} Had 7 of clubs`);
@@ -125,7 +126,7 @@ export default function Game() {
   const playAICard = (
     aiIndex: number,
     players: Player[],
-    table: TableSuit[]
+    table: TableSuit[],
   ) => {
     const ai = players[aiIndex];
     const playableCards = getPlayableCards(ai, table);
@@ -178,13 +179,12 @@ export default function Game() {
         playAICard(
           gameState.currentPlayerIndex,
           gameState.players,
-          gameState.table
+          gameState.table,
         );
       }, 500);
       return () => clearTimeout(timer);
     }
   }, [gameState.currentPlayerIndex, gameState.players, gameState.table]);
-
 
   // Passing turn
   const canPass = !hasPlayableCard(currentPlayer, gameState.table);
@@ -232,11 +232,25 @@ export default function Game() {
         gameState.table.map((t) => {
           const { left, center, right } = getSuitDisplay(t.cards);
           return (
-            <div key={t.suit} style={{ marginBottom: 10 }}>
-              <strong>{t.suit.toUpperCase()}:</strong>{" "}
-              <span>{left?.rank || "-"}</span>{" "}
-              <span>{center?.rank || "-"}</span>{" "}
-              <span>{right?.rank || "-"}</span>
+            <div key={t.suit} style={{ marginBottom: 16 }}>
+              <strong>{t.suit.toUpperCase()}</strong>
+              <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                {left ? (
+                  <PlayingCard card={left} small />
+                ) : (
+                  <div style={{ width: 50 }} />
+                )}
+                {center ? (
+                  <PlayingCard card={center} small />
+                ) : (
+                  <div style={{ width: 50 }} />
+                )}
+                {right ? (
+                  <PlayingCard card={right} small />
+                ) : (
+                  <div style={{ width: 50 }} />
+                )}
+              </div>
             </div>
           );
         })
@@ -245,28 +259,20 @@ export default function Game() {
       {currentPlayer.type === "human" && (
         <>
           <h3>Your hand</h3>
-          {currentPlayer.hand.map((c, idx) => {
-            const playable = canPlayCard(c, gameState.table);
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {currentPlayer.hand.map((c, idx) => {
+              const playable = canPlayCard(c, gameState.table);
 
-            return (
-              <button
-                key={idx}
-                disabled={!playable}
-                onClick={() => playable && playCard(c)}
-                style={{
-                  margin: 4,
-                  padding: "6px 10px",
-                  borderRadius: 6,
-                  backgroundColor: playable ? "#c8f7c5" : "#eee",
-                  border: playable ? "2px solid green" : "1px solid #aaa",
-                  cursor: playable ? "pointer" : "not-allowed",
-                  opacity: playable ? 1 : 0.6,
-                }}
-              >
-                {c.rank} {c.suit[0].toUpperCase()}
-              </button>
-            );
-          })}
+              return (
+                <PlayingCard
+                  key={idx}
+                  card={c}
+                  playable={playable}
+                  onClick={() => playable && playCard(c)}
+                />
+              );
+            })}
+          </div>
 
           <div style={{ marginTop: 10 }}>
             <button onClick={passTurn} disabled={!canPass}>
