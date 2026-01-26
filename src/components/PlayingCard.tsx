@@ -1,12 +1,14 @@
-import React from "react";
 import type { Card } from "../game/types";
 
-type PlayingCardProps = {
-  card: Card;
+type Props = {
+  card?: Card;
   playable?: boolean;
   onClick?: () => void;
-  small?: boolean; // pöytää varten
+  hidden?: boolean;
 };
+
+const CARD_WIDTH = 70;
+const CARD_HEIGHT = 100;
 
 const suitSymbols: Record<Card["suit"], string> = {
   hearts: "♥",
@@ -16,70 +18,72 @@ const suitSymbols: Record<Card["suit"], string> = {
 };
 
 const suitColors: Record<Card["suit"], string> = {
-  hearts: "#d00",
-  diamonds: "#d00",
-  clubs: "#000",
-  spades: "#000",
-};
-
-const rankLabel = (rank: number) => {
-  if (rank === 1) return "A";
-  if (rank === 11) return "J";
-  if (rank === 12) return "Q";
-  if (rank === 13) return "K";
-  return rank.toString();
+  hearts: "red",
+  diamonds: "red",
+  clubs: "black",
+  spades: "black",
 };
 
 export default function PlayingCard({
   card,
   playable = false,
   onClick,
-  small = false,
-}: PlayingCardProps) {
-  const color = suitColors[card.suit];
+  hidden = false,
+}: Props) {
+  if (hidden) {
+    // Placeholder kortti → pitää gridin linjassa
+    return (
+      <div
+        style={{
+          width: CARD_WIDTH,
+          height: CARD_HEIGHT,
+        }}
+      />
+    );
+  }
+
+  if (!card) return null;
 
   return (
     <div
       onClick={playable ? onClick : undefined}
       style={{
-        width: small ? 50 : 70,
-        height: small ? 70 : 100,
+        width: CARD_WIDTH,
+        height: CARD_HEIGHT,
         borderRadius: 8,
+        border: "1px solid #333",
         backgroundColor: "#fff",
-        border: playable ? "2px solid #2ecc71" : "1px solid #333",
         boxShadow: playable
-          ? "0 4px 8px rgba(0,0,0,0.3)"
-          : "0 2px 4px rgba(0,0,0,0.2)",
+          ? "0 4px 8px rgba(0, 0, 0, 0.25)"
+          : "0 2px 4px rgba(0,0,0,0.15)",
         cursor: playable ? "pointer" : "default",
-        opacity: playable ? 1 : 0.6,
+        opacity: playable ? 1 : 0.5,
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
         padding: 6,
         userSelect: "none",
         transition: "transform 0.15s ease, box-shadow 0.15s ease",
-        transform: playable ? "translateY(0)" : undefined,
-      }}
-      onMouseEnter={e => {
-        if (playable) e.currentTarget.style.transform = "translateY(-4px)";
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.transform = "translateY(0)";
       }}
     >
       {/* Yläkulma */}
-      <div style={{ color, fontSize: small ? 12 : 14, fontWeight: 600 }}>
-        {rankLabel(card.rank)}
-        {suitSymbols[card.suit]}
-      </div>
-
-      {/* Keskiosa */}
       <div
         style={{
+          fontSize: 14,
+          fontWeight: "bold",
+          alignSelf: "flex-start",
+          color: suitColors[card.suit],
+        }}
+      >
+        {card.rank} {suitSymbols[card.suit]}
+      </div>
+
+      {/* Keskisymboli */}
+      <div
+        style={{
+          fontSize: 28,
           textAlign: "center",
-          fontSize: small ? 24 : 36,
-          color,
-          lineHeight: 1,
+          color: suitColors[card.suit],
         }}
       >
         {suitSymbols[card.suit]}
@@ -88,15 +92,14 @@ export default function PlayingCard({
       {/* Alakulma */}
       <div
         style={{
-          color,
-          fontSize: small ? 12 : 14,
-          fontWeight: 600,
+          fontSize: 14,
+          fontWeight: "bold",
+          color: suitColors[card.suit],
           alignSelf: "flex-end",
           transform: "rotate(180deg)",
         }}
       >
-        {rankLabel(card.rank)}
-        {suitSymbols[card.suit]}
+        {card.rank} {suitSymbols[card.suit]}
       </div>
     </div>
   );
