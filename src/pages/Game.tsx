@@ -4,7 +4,7 @@ import { createInitialGameState, type GameState } from "../game/gamestate";
 import type { Card, TableSuit } from "../game/types";
 import type { Player } from "../game/player";
 import { createDeck, shuffleDeck, dealCards } from "../game/deck";
-import { canPlayCard, hasPlayableCard, getPlayableCards } from "../game/rules";
+import { isEndCard, canPlayCard, hasPlayableCard, getPlayableCards } from "../game/rules";
 import PlayingCard from "../components/PlayingCard";
 
 export default function Game() {
@@ -103,7 +103,17 @@ export default function Game() {
         hand: currentPlayer.hand.filter((c) => c !== card),
       };
 
-      const nextIndex = (prev.currentPlayerIndex + 1) % newPlayers.length;
+      const playedEndCard = isEndCard(card);
+const stillHasPlayable = hasPlayableCard(
+  newPlayers[prev.currentPlayerIndex],
+  newTable
+);
+
+const nextIndex =
+  playedEndCard && stillHasPlayable
+    ? prev.currentPlayerIndex
+    : (prev.currentPlayerIndex + 1) % newPlayers.length;
+      
 
       if (checkWin(newPlayers)) return prev;
 
@@ -133,9 +143,10 @@ export default function Game() {
     const cardToPlay = playableCards[0] ?? null;
 
     if (!cardToPlay) {
-      addToLog(`${ai.name} passed`);
+      addToLog(`${ai.name} took the pantti`);
       setGameState((prev) => ({
         ...prev,
+        panttiPlayerId: currentPlayer.id,
         currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
       }));
       return;
@@ -195,25 +206,27 @@ export default function Game() {
       return;
     }
 
-    addToLog(`${currentPlayer.name} passed`);
+    addToLog(`${currentPlayer.name} took the pantti`);
     setGameState((prev) => ({
       ...prev,
+      panttiPlayerId: currentPlayer.id,
       currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
     }));
   };
 
-  // Render three piles per suit
-  const getSuitDisplay = (cards: Card[]) => {
-    const left = cards.filter((c) => c.rank < 7);
-    const seven = cards.find((c) => c.rank === 7);
-    const right = cards.filter((c) => c.rank > 7);
+  const getTopCard = (cards: Card[]) =>
+    cards
+      .filter((c) => c.rank > 7)
+      .sort((a, b) => a.rank - b.rank)
+      .at(-1) || null;
 
-    return {
-      left: left.length ? left[left.length - 1] : null,
-      center: seven || null,
-      right: right.length ? right[right.length - 1] : null,
-    };
-  };
+  const getBottomCard = (cards: Card[]) =>
+    cards
+      .filter((c) => c.rank < 7)
+      .sort((a, b) => b.rank - a.rank)
+      .at(-1) || null;
+
+  const getSeven = (cards: Card[]) => cards.find((c) => c.rank === 7) || null;
 
   // UI
 
@@ -226,34 +239,45 @@ export default function Game() {
       </p>
 
       <h3>Table</h3>
+
       {gameState.table.length === 0 ? (
         <p>Pöytä tyhjä</p>
       ) : (
-        gameState.table.map((t) => {
-          const { left, center, right } = getSuitDisplay(t.cards);
-          return (
-            <div key={t.suit} style={{ marginBottom: 16 }}>
-              <strong>{t.suit.toUpperCase()}</strong>
-              <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-                {left ? (
-                  <PlayingCard card={left} small />
-                ) : (
-                  <div style={{ width: 50 }} />
-                )}
-                {center ? (
-                  <PlayingCard card={center} small />
-                ) : (
-                  <div style={{ width: 50 }} />
-                )}
-                {right ? (
-                  <PlayingCard card={right} small />
-                ) : (
-                  <div style={{ width: 50 }} />
-                )}
-              </div>
-            </div>
-          );
-        })
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${gameState.table.length}, 70px)`,
+            gridTemplateRows: "100px 100px 100px",
+            gap: 25,
+            justifyContent: "center",
+          }}
+        >
+          {/* YLÄRIVI (8 → K) */}
+          {gameState.table.map((t) => (
+            <PlayingCard
+              key={t.suit + "top"}
+              card={getTopCard(t.cards) || undefined}
+              hidden={!getTopCard(t.cards)}
+            />
+          ))}
+
+          {/* SEISKAT */}
+          {gameState.table.map((t) => (
+            <PlayingCard
+              key={t.suit + "seven"}
+              card={getSeven(t.cards) || undefined}
+            />
+          ))}
+
+          {/* ALARIVI (6 → A) */}
+          {gameState.table.map((t) => (
+            <PlayingCard
+              key={t.suit + "bottom"}
+              card={getBottomCard(t.cards) || undefined}
+              hidden={!getBottomCard(t.cards)}
+            />
+          ))}
+        </div>
       )}
 
       {currentPlayer.type === "human" && (
@@ -288,6 +312,7 @@ export default function Game() {
           <li key={p.id}>
             {i === gameState.currentPlayerIndex ? "👉 " : ""}
             {p.name} ({p.type}) – {p.hand.length} cards
+            {gameState.panttiPlayerId === p.id && " (pantti +25)"}
           </li>
         ))}
       </ul>

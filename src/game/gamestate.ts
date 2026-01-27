@@ -10,9 +10,10 @@ export type GamePhase =
 export type GameState = {
   gameCode: string;
   players: Player[];
-  table: TableSuit[];       // pöydällä olevat kortit per suit
+  table: TableSuit[];
   currentPlayerIndex: number;
   phase: GamePhase;
+  panttiPlayerId?: string;
 };
 
 import { createPlayer } from "./player";
@@ -49,5 +50,6 @@ export function createInitialGameState(
     table: [], // alussa tyhjä
     currentPlayerIndex: startingPlayerIndex >= 0 ? startingPlayerIndex : 0,
     phase: "playing",
+    panttiPlayerId: undefined,
   };
 }

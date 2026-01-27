@@ -58,3 +58,7 @@ export const hasPlayableCard = (
 ): boolean => {
   return getPlayableCards(player, table).length > 0;
 };
+
+/** Handle end card */
+export const isEndCard = (card: Card) =>
+  card.rank === 1 || card.rank === 13;
