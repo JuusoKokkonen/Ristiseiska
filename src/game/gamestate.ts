@@ -33,13 +33,13 @@ export function createInitialGameState(
     players.push(createPlayer(`AI ${i + 1}`, "ai"));
   }
 
-  // --- 1. Luo pakka ja sekoita ---
+  // Create deck + shuffle
   const deck = shuffleDeck(createDeck());
 
-  // --- 2. Jaa kortit pelaajille ---
+  // Deal cards to players
   const playersWithCards = dealCards(players, deck);
 
-  // --- 3. Aloittava pelaaja (jolla on 7) ---
+  // Player with 7 of clubs starts
   const startingPlayerIndex = playersWithCards.findIndex(p =>
     p.hand.some(c => c.rank === 7)
   );
@@ -47,7 +47,7 @@ export function createInitialGameState(
   return {
     gameCode,
     players: playersWithCards,
-    table: [], // alussa tyhjä
+    table: [], // starts empty
     currentPlayerIndex: startingPlayerIndex >= 0 ? startingPlayerIndex : 0,
     phase: "playing",
     panttiPlayerId: undefined,

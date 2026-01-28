@@ -1,7 +1,6 @@
 import type { Card, Suit, Rank } from "./types";
 import type { Player } from "./player";
 
-/* --- 1. Peruskorttipakka 52 korttia --- */
 export function createDeck(): Card[] {
   const suits: Suit[] = ["hearts", "diamonds", "clubs", "spades"];
   const ranks: Rank[] = [1,2,3,4,5,6,7,8,9,10,11,12,13];
@@ -17,7 +16,7 @@ export function createDeck(): Card[] {
   return deck;
 }
 
-/* --- 2. Sekoitus (Fisher–Yates shuffle) --- */
+/* Shuffle (Fisher–Yates shuffle) */
 export function shuffleDeck(deck: Card[]): Card[] {
   const newDeck = [...deck];
   for (let i = newDeck.length - 1; i > 0; i--) {
@@ -27,7 +26,6 @@ export function shuffleDeck(deck: Card[]): Card[] {
   return newDeck;
 }
 
-/* --- 3. Korttien jako pelaajille --- */
 export function dealCards(players: Player[], deck: Card[]): Player[] {
   const hands: Card[][] = players.map(() => []);
 
@@ -39,11 +37,11 @@ export function dealCards(players: Player[], deck: Card[]): Player[] {
 
   return players.map((p, index) => ({
     ...p,
-    hand: hands[index].sort(compareCards), // haluttu järjestys
+    hand: hands[index].sort(compareCards),
   }));
 }
 
-/* --- 4. Apufunktio korttien järjestykseen (optional) --- */
+/* Order cards in hand (optional) */
 function compareCards(a: Card, b: Card) {
   if (a.suit === b.suit) return a.rank - b.rank;
   return suitOrder(a.suit) - suitOrder(b.suit);

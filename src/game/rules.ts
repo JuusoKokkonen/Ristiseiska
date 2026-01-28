@@ -1,27 +1,24 @@
 import type { Card, TableSuit } from "./types";
 import type { Player } from "./player";
 
-/**
- * Tarkistaa voiko yksittäisen kortin pelata nykyiseen pöytään
- */
+// Check if card can be played
 export const canPlayCard = (card: Card, table: TableSuit[]) => {
   const suitPile = table.find(t => t.suit === card.suit);
 
-  // Jos maata ei ole vielä pöydässä → vain 7 sallittu
+  // 7 of each suit must be played first
   if (!suitPile) {
     return card.rank === 7;
   }
 
   const ranksOnTable = suitPile.cards.map(c => c.rank);
 
-  // 7 pitää aina olla
+  // 7 must be on table before 6 and 8
   if (!ranksOnTable.includes(7)) return false;
 
   const has6 = ranksOnTable.includes(6);
   const has8 = ranksOnTable.includes(8);
 
-  // Jos yritetään laajentaa ylös tai alas,
-  // vaaditaan että 6 ja 8 on jo pelattu
+// 6 and 8 must be on the table before further cards
   if (
     (card.rank < 6 || card.rank > 8) &&
     (!has6 || !has8)
@@ -39,9 +36,6 @@ export const canPlayCard = (card: Card, table: TableSuit[]) => {
 };
 
 
-/**
- * Palauttaa kaikki pelaajan pelattavat kortit
- */
 export const getPlayableCards = (
   player: Player,
   table: TableSuit[]
@@ -49,9 +43,6 @@ export const getPlayableCards = (
   return player.hand.filter(card => canPlayCard(card, table));
 };
 
-/**
- * Onko pelaajalla yhtään pelattavaa korttia
- */
 export const hasPlayableCard = (
   player: Player,
   table: TableSuit[]

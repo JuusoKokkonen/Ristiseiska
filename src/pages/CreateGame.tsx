@@ -7,13 +7,13 @@ export default function CreateGame() {
   const [players, setPlayers] = useState<number>(4);
   const [aiPlayers, setAiPlayers] = useState<number>(3);
 
-  // Game code luodaan kerran
+  // Game code for multiplayer (at some point)
   const [gameCode] = useState(() => generateGameCode());
 
   function handlePlayersChange(value: number) {
     setPlayers(value);
 
-    // Varmistetaan että AI-pelaajia ei ole liikaa
+    // Not adding too many AI players
     if (aiPlayers >= value) {
       setAiPlayers(value - 1);
     }
@@ -80,7 +80,7 @@ export default function CreateGame() {
   );
 }
 
-/* --- apufunktiot --- */
+// additional functions
 
 function generateGameCode(): string {
   return Math.random()
