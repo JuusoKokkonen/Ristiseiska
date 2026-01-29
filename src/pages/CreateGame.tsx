@@ -1,45 +1,108 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+type LobbySlot =
+  | { type: "empty" }
+  | { type: "human"; name: string }
+  | { type: "ai"; name: string };
+
 export default function CreateGame() {
   const navigate = useNavigate();
 
   const [players, setPlayers] = useState<number>(4);
-  const [aiPlayers, setAiPlayers] = useState<number>(3);
+  const [playerName, setPlayerName] = useState<string>("");
 
-  // Game code for multiplayer (at some point)
+  const [slots, setSlots] = useState<LobbySlot[]>([]);
+
   const [gameCode] = useState(() => generateGameCode());
 
-  function handlePlayersChange(value: number) {
-    setPlayers(value);
-
-    // Not adding too many AI players
-    if (aiPlayers >= value) {
-      setAiPlayers(value - 1);
+  function joinGame(index: number) {
+    if (!playerName.trim()) {
+      alert("Please enter your name first");
+      return;
     }
+
+    // sallitaan vain yksi ihmispelaaja
+    if (slots.some((s) => s.type === "human")) {
+      alert("Human player already joined");
+      return;
+    }
+
+    setSlots((prev) =>
+      prev.map((slot, i) =>
+        i === index ? { type: "human", name: playerName } : slot
+      )
+    );
   }
 
+  function addAI(index: number) {
+    setSlots((prev) =>
+      prev.map((slot, i) =>
+        i === index
+          ? { type: "ai", name: randomAIName() }
+          : slot
+      )
+    );
+  }
+
+    function removePlayer(index: number) {
+    setSlots((prev) => {
+      const next = [...prev];
+      next[index] = { type: "empty" };
+      return next;
+    });
+  } 
+
   function startGame() {
+    const humanPlayers = slots.filter((s) => s.type === "human").length;
+    const aiPlayers = slots.filter((s) => s.type === "ai").length;
+
+    if (humanPlayers === 0) {
+      alert("At least one human player required");
+      return;
+    }
+
     navigate("/game", {
       state: {
-        players,
-        aiPlayers,
-        humanPlayers: players - aiPlayers,
         gameCode,
+        humanPlayers,
+        aiPlayers,
+        players,
+        playerName,
       },
     });
   }
 
   return (
-    <div style={{ maxWidth: "400px", margin: "2rem auto" }}>
+    <div style={{ maxWidth: 500, margin: "2rem auto" }}>
       <h2>Create Game</h2>
+
+      <label>
+        Your name:
+        <input
+          value={playerName}
+          onChange={(e) => setPlayerName(e.target.value)}
+          style={{ display: "block", width: "100%", marginTop: 4 }}
+        />
+      </label>
+
+      <br />
 
       <label>
         Total players:
         <select
-          value={players}
-          onChange={(e) => handlePlayersChange(Number(e.target.value))}
-        >
+  value={players}
+  onChange={(e) => {
+    const value = Number(e.target.value);
+    setPlayers(value);
+
+    setSlots((prev) => {
+      const next = [...prev];
+      while (next.length < value) next.push({ type: "empty" });
+      return next.slice(0, value);
+    });
+  }}
+>
           {range(2, 8).map((n) => (
             <option key={n} value={n}>
               {n}
@@ -50,27 +113,44 @@ export default function CreateGame() {
 
       <br /><br />
 
-      <label>
-        Computer players:
-        <select
-          value={aiPlayers}
-          onChange={(e) => setAiPlayers(Number(e.target.value))}
-        >
-          {range(0, players - 1).map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
-      </label>
+      <h3>Lobby</h3>
 
-      <br /><br />
+      {slots.map((slot, index) => (
+  <div
+    key={index}
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      border: "1px solid #ccc",
+      padding: "8px",
+      marginBottom: "6px",
+      borderRadius: 6,
+    }}
+  >
+    <div>
+      {slot.type === "empty" && <em>Empty slot</em>}
+      {slot.type === "human" && <strong>👤 {slot.name}</strong>}
+      {slot.type === "ai" && <strong>🤖 AI player</strong>}
+    </div>
+
+    <div>
+      {slot.type === "empty" ? (
+        <>
+          <button onClick={() => joinGame(index)}>Join game</button>{" "}
+          <button onClick={() => addAI(index)}>Add AI</button>
+        </>
+      ) : (
+        <button onClick={() => removePlayer(index)}>Remove</button>
+      )}
+    </div>
+  </div>
+))}
+
+      <br />
 
       <div>
-        <strong>Game code:</strong>
-        <div style={{ fontSize: "1.2rem", letterSpacing: "0.1em" }}>
-          {gameCode}
-        </div>
+        <strong>Game code:</strong> {gameCode}
       </div>
 
       <br />
@@ -80,15 +160,17 @@ export default function CreateGame() {
   );
 }
 
-// additional functions
+/* helpers */
 
 function generateGameCode(): string {
-  return Math.random()
-    .toString(36)
-    .substring(2, 8)
-    .toUpperCase();
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
 function range(min: number, max: number): number[] {
   return Array.from({ length: max - min + 1 }, (_, i) => min + i);
+}
+
+function randomAIName() {
+  const names = ["HAL", "DeepBlue", "Skynet", "R2-D2", "Cortana"];
+  return names[Math.floor(Math.random() * names.length)];
 }

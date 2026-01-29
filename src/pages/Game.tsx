@@ -4,17 +4,23 @@ import { createInitialGameState, type GameState } from "../game/gamestate";
 import type { Card, TableSuit } from "../game/types";
 import type { Player } from "../game/player";
 import { createDeck, shuffleDeck, dealCards } from "../game/deck";
-import { isEndCard, canPlayCard, hasPlayableCard, getPlayableCards } from "../game/rules";
+import {
+  isEndCard,
+  canPlayCard,
+  hasPlayableCard,
+  getPlayableCards,
+} from "../game/rules";
 import PlayingCard from "../components/PlayingCard";
 
 export default function Game() {
   const location = useLocation();
   const [gameLog, setGameLog] = React.useState<string[]>([]);
   const { gameCode, humanPlayers, aiPlayers } = location.state as {
-    gameCode: string;
-    humanPlayers: number;
-    aiPlayers: number;
-  };
+  gameCode: string;
+  humanPlayers: number;
+  aiPlayers: number;
+  playerName: string;
+};
 
   // Game state
   const [gameState, setGameState] = React.useState<GameState>(() => {
@@ -104,16 +110,15 @@ export default function Game() {
       };
 
       const playedEndCard = isEndCard(card);
-const stillHasPlayable = hasPlayableCard(
-  newPlayers[prev.currentPlayerIndex],
-  newTable
-);
+      const stillHasPlayable = hasPlayableCard(
+        newPlayers[prev.currentPlayerIndex],
+        newTable,
+      );
 
-const nextIndex =
-  playedEndCard && stillHasPlayable
-    ? prev.currentPlayerIndex
-    : (prev.currentPlayerIndex + 1) % newPlayers.length;
-      
+      const nextIndex =
+        playedEndCard && stillHasPlayable
+          ? prev.currentPlayerIndex
+          : (prev.currentPlayerIndex + 1) % newPlayers.length;
 
       if (checkWin(newPlayers)) return prev;
 
