@@ -257,7 +257,7 @@ export default function Game() {
             justifyContent: "center",
           }}
         >
-          {/* YLÄRIVI (8 → K) */}
+          {/* Upper row */}
           {gameState.table.map((t) => (
             <PlayingCard
               key={t.suit + "top"}
@@ -266,7 +266,7 @@ export default function Game() {
             />
           ))}
 
-          {/* SEISKAT */}
+          {/* Sevens (middle row) */}
           {gameState.table.map((t) => (
             <PlayingCard
               key={t.suit + "seven"}
@@ -274,7 +274,7 @@ export default function Game() {
             />
           ))}
 
-          {/* ALARIVI (6 → A) */}
+          {/* Bottom row */}
           {gameState.table.map((t) => (
             <PlayingCard
               key={t.suit + "bottom"}
