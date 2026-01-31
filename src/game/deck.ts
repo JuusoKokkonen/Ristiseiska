@@ -16,7 +16,7 @@ export function createDeck(): Card[] {
   return deck;
 }
 
-/* Shuffle (Fisher–Yates shuffle) */
+/* Fisher–Yates shuffle */
 export function shuffleDeck(deck: Card[]): Card[] {
   const newDeck = [...deck];
   for (let i = newDeck.length - 1; i > 0; i--) {
