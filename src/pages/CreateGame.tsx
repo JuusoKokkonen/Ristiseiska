@@ -22,7 +22,7 @@ export default function CreateGame() {
       return;
     }
 
-    // sallitaan vain yksi ihmispelaaja
+    // only 1 human player for now
     if (slots.some((s) => s.type === "human")) {
       alert("Human player already joined");
       return;
