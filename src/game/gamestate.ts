@@ -1,6 +1,7 @@
 import type { TableSuit } from "./types";
 import type { Player } from "./player";
 import { createDeck, shuffleDeck, dealCards } from "./deck";
+import { createPlayer } from "./player";
 
 export type GamePhase =
   | "setup"
@@ -14,14 +15,16 @@ export type GameState = {
   currentPlayerIndex: number;
   phase: GamePhase;
   panttiPlayerId?: string;
+  gameOver: boolean;
+  winnerId: string | null;
+  scores: Record<string, number>;
 };
-
-import { createPlayer } from "./player";
 
 export function createInitialGameState(
   gameCode: string,
   humanPlayers: number,
-  aiPlayers: number
+  aiPlayers: number,
+
 ) {
   const players = [];
 
@@ -51,5 +54,8 @@ export function createInitialGameState(
     currentPlayerIndex: startingPlayerIndex >= 0 ? startingPlayerIndex : 0,
     phase: "playing",
     panttiPlayerId: undefined,
+    gameOver: false,
+    winnerId: null,
+    scores: {},
   };
 }
