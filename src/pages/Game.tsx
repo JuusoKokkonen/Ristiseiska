@@ -4,13 +4,9 @@ import { createInitialGameState, type GameState } from "../game/gamestate";
 import type { Card, TableSuit } from "../game/types";
 import type { Player } from "../game/player";
 import { createDeck, shuffleDeck, dealCards } from "../game/deck";
-import {
-  isEndCard,
-  canPlayCard,
-  hasPlayableCard,
-  getPlayableCards,
-} from "../game/rules";
+import { isEndCard, canPlayCard, hasPlayableCard, getPlayableCards } from "../game/rules";
 import PlayingCard from "../components/PlayingCard";
+import { calculateScores } from "../game/scoring";
 
 export default function Game() {
   const location = useLocation();
@@ -207,7 +203,7 @@ export default function Game() {
 
   const passTurn = () => {
     if (!canPass) {
-      alert("Et voi passata – sinulla on pelattava kortti!");
+      alert("You cannot pass – playable card in hand detected!");
       return;
     }
 
@@ -246,7 +242,7 @@ export default function Game() {
       <h3>Table</h3>
 
       {gameState.table.length === 0 ? (
-        <p>Pöytä tyhjä</p>
+        <p>Empty table</p>
       ) : (
         <div
           style={{
