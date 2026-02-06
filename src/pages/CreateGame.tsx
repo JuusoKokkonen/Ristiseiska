@@ -130,8 +130,8 @@ export default function CreateGame() {
   >
     <div>
       {slot.type === "empty" && <em>Empty slot</em>}
-      {slot.type === "human" && <strong>👤 {slot.name}</strong>}
-      {slot.type === "ai" && <strong>🤖 AI player</strong>}
+      {slot.type === "human" && <strong>{slot.name}</strong>}
+      {slot.type === "ai" && <strong>AI player</strong>}
     </div>
 
     <div>
