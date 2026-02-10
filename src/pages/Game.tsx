@@ -49,7 +49,7 @@ export default function Game() {
 
   const playInitialCrossSevenIfNeeded = () => {
     setGameState((prev) => {
-      // jos pöydässä on jo kortteja → skip
+      // Skip if table isnt empty
       if (prev.table.length > 0) return prev;
 
       const crossSevenPlayerIndex = prev.players.findIndex((p) =>
