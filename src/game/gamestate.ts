@@ -50,7 +50,7 @@ export function createInitialGameState(
   return {
     gameCode,
     players: playersWithCards,
-    table: [], // starts empty
+    table: [],
     currentPlayerIndex: startingPlayerIndex >= 0 ? startingPlayerIndex : 0,
     phase: "playing",
     panttiPlayerId: undefined,
