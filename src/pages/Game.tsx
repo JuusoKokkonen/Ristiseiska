@@ -6,7 +6,6 @@ import type { Player } from "../game/player";
 import { createDeck, shuffleDeck, dealCards } from "../game/deck";
 import { isEndCard, canPlayCard, hasPlayableCard, getPlayableCards } from "../game/rules";
 import PlayingCard from "../components/PlayingCard";
-import { calculateScores } from "../game/scoring";
 
 export default function Game() {
   const location = useLocation();
