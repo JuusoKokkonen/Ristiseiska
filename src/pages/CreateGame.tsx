@@ -18,7 +18,7 @@ export default function CreateGame() {
 
   function joinGame(index: number) {
     if (!playerName.trim()) {
-      alert("Please enter your name first");
+      alert("Please enter your name");
       return;
     }
 
